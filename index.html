@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WOLFFY: Touch - Katseye</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Montserrat:wght@800;900&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            pink: '#ec4899', /* K-pop Neon Pink */
+                            hover: '#f472b6',
+                            dark: '#050505',
+                            card: '#121212',
+                            cardHover: '#1f1f1f',
+                            light: '#a1a1aa'
+                        }
+                    },
+                    fontFamily: {
+                        montserrat: ['Montserrat', 'sans-serif'],
+                        outfit: ['Outfit', 'sans-serif'],
+                        fira: ['"Fira Code"', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base & Resets */
+        body {
+            background-color: #050505;
+            color: #FFFFFF;
+            overflow: hidden;
+            font-family: 'Outfit', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        h1, h2, h3, .title-font { font-family: 'Montserrat', sans-serif; }
+        .code-font { font-family: '"Fira Code"', monospace; }
+
+        /* Ambient Background - Pink Pop */
+        .ambient-bg {
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle at 20% 30%, rgba(236, 72, 153, 0.08) 0%, rgba(5, 5, 5, 1) 40%), 
+                        radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.03) 0%, rgba(5, 5, 5, 1) 40%);
+            z-index: -1; pointer-events: none;
+            animation: pulseBg 25s ease-in-out infinite alternate;
+        }
+        @keyframes pulseBg {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+
+        /* Slide Transitions */
+        .slide {
+            display: none; opacity: 0;
+            transition: opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateY(30px);
+            width: 100%; height: 100%;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .slide.active { display: flex; opacity: 1; transform: translateY(0); }
+
+        /* UI Components */
+        .glass-card {
+            background: rgba(18, 18, 18, 0.7); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover { border-color: rgba(236, 72, 153, 0.4); }
+
+        .speaking-hub {
+            border-left: 4px solid #ec4899;
+            background: linear-gradient(90deg, rgba(236, 72, 153, 0.1) 0%, rgba(24, 24, 24, 0) 100%);
+            animation: slideInLeft 0.4s ease-out forwards;
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #ec4899; }
+
+        /* Lyrics Highlight */
+        .lyric-highlight {
+            color: #ec4899; cursor: pointer; position: relative;
+            display: inline-block; transition: all 0.3s ease; font-weight: 800;
+        }
+        .lyric-highlight::after {
+            content: ''; position: absolute; width: 100%; height: 3px;
+            bottom: 2px; left: 0; background-color: #ec4899;
+            transform: scaleX(0); transform-origin: bottom right; transition: transform 0.3s ease-out;
+        }
+        .lyric-highlight:hover {
+            color: #f472b6; text-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+        }
+        .lyric-highlight:hover::after {
+            transform: scaleX(1); transform-origin: bottom left;
+        }
+
+        /* Badge */
+        .badge-kpop {
+            background: #ec4899;
+            color: white;
+            font-weight: 900;
+            padding: 5px 15px;
+            border-radius: 99px;
+            box-shadow: 0 0 15px rgba(236, 72, 153, 0.5);
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        /* Games Animations */
+        .shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(3px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+            40%, 60% { transform: translate3d(5px, 0, 0); }
+        }
+
+        /* Flip Cards */
+        .flip-card { perspective: 1000px; cursor: pointer; height: 240px; }
+        .flip-card-inner {
+            position: relative; width: 100%; height: 100%; text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back {
+            position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+            border-radius: 16px; display: flex; align-items: center; justify-content: center; padding: 2rem;
+            flex-direction: column;
+        }
+        .flip-card-front { background: linear-gradient(145deg, #1f1f1f, #121212); border: 1px solid rgba(255,255,255,0.05); }
+        .flip-card-back { background: linear-gradient(145deg, #ec4899, #be185d); color: #fff; transform: rotateY(180deg); }
+
+        /* Sentence Constructor */
+        .constructor-blank {
+            display: inline-block; min-width: 100px; height: 40px; border-bottom: 4px solid #555;
+            margin: 0 10px; vertical-align: middle; text-align: center; color: #ec4899; font-weight: bold;
+            transition: border-color 0.3s; cursor: pointer;
+        }
+        .constructor-blank.filled { border-color: #ec4899; }
+        .constructor-pill { transition: all 0.2s; cursor: pointer; user-select: none; }
+        .constructor-pill:hover { transform: scale(1.05); background-color: #ec4899; color: white; }
+        .constructor-pill.used { opacity: 0; pointer-events: none; transform: scale(0); }
+
+        .word-pill { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; user-select: none; }
+        .word-pill:hover { transform: scale(1.08) translateY(-2px); background-color: #ec4899; color: #fff; }
+
+        .rapid-card { transition: all 0.3s; }
+        .rapid-card.hidden-card { display: none; opacity: 0; }
+
+        .notepad-textarea {
+            background-color: transparent;
+            background-image: repeating-linear-gradient(transparent, transparent 31px, rgba(255,255,255,0.05) 31px, rgba(255,255,255,0.05) 32px);
+            line-height: 32px;
+            background-attachment: local;
+            border: none;
+            resize: none;
+        }
+        .notepad-textarea:focus { outline: none; }
+
+        .confetti { position: absolute; width: 12px; height: 12px; background-color: #ec4899; opacity: 0; z-index: 100; }
+        @keyframes fall {
+            0% { transform: translateY(-100vh) rotate(0deg) scale(1); opacity: 1; }
+            100% { transform: translateY(110vh) rotate(720deg) scale(0.5); opacity: 0; }
+        }
+
+        .grammar-switch-container { position: relative; height: 140px; overflow: hidden; display: flex; justify-content: center; align-items: center;}
+        .grammar-state { position: absolute; width: 100%; transition: all 0.5s ease; opacity: 0; transform: translateY(20px); pointer-events: none;}
+        .grammar-state.active { opacity: 1; transform: translateY(0); pointer-events: auto;}
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col relative text-white bg-brand-dark">
+
+    <div class="ambient-bg"></div>
+
+    <main id="slides-container" class="flex-1 w-full max-w-6xl mx-auto overflow-y-auto overflow-x-hidden p-6 pb-36 relative z-10">
+        
+        <!-- ================= SLIDE 0: PRODUCER'S NOTES ================= -->
+        <section class="slide active" id="slide-0">
+            <div class="flex items-center gap-4 mb-2">
+                <span class="text-brand-pink tracking-widest uppercase text-xs font-bold code-font">WOLFFY_MASTERCLASS_INIT</span>
+                <div class="badge-kpop">K-Pop Special Edition</div>
+            </div>
+            <h1 class="text-5xl md:text-6xl font-black title-font mb-10 tracking-tight">Teacher's Notes</h1>
+            <div class="glass-card p-10 w-full max-w-2xl text-left relative overflow-hidden">
+                <div class="flex items-center gap-3 mb-8 relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></svg>
+                    <h2 class="text-3xl font-black title-font">Lesson Guide</h2>
+                </div>
+                <div class="space-y-4 text-brand-light text-lg relative z-10">
+                    <div class="flex gap-4 border-b border-gray-800 pb-4"><span class="w-24 text-gray-500 code-font text-sm uppercase mt-1">Track</span><span class="text-white font-bold text-xl">Touch - Katseye</span></div>
+                    <div class="flex gap-4 border-b border-gray-800 pb-4 pt-2"><span class="w-24 text-gray-500 code-font text-sm uppercase mt-1">Level</span><span class="text-white font-medium">A1 (Beginner)</span></div>
+                    <div class="flex gap-4 border-b border-gray-800 pb-4 pt-2"><span class="w-24 text-gray-500 code-font text-sm uppercase mt-1">Grammar</span><span class="text-brand-pink font-bold">Imperatives (Commands)</span></div>
+                    <div class="flex gap-4 pt-2"><span class="w-24 text-gray-500 code-font text-sm uppercase mt-1">Focus</span><span>Body Parts, K-pop Culture, Actions, and Rules.</span></div>
+                </div>
+                <div class="mt-10 p-5 bg-brand-card border border-gray-800 rounded-xl flex gap-4 items-start relative z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" stroke="#ec4899" stroke-width="2" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                    <p class="text-sm text-gray-300">
+                        <strong class="text-white font-bold tracking-wide">EXPANDED K-POP EDITION:</strong> This lesson is extended to 25 pages. It now includes "Fandom Dictionary", "Idol Rules", and interactive Roleplays to boost engagement with teens. The UI is 100% in English.
+                    </p>
+                </div>
+            </div>
+            <button onclick="nextSlide()" class="mt-12 bg-white text-black font-bold py-4 px-10 rounded-full text-lg hover:scale-105 transition-all hover:bg-brand-pink hover:text-white shadow-lg shadow-pink-500/20">START SESSION</button>
+        </section>
+
+        <!-- ================= SLIDE 1: ALBUM COVER ================= -->
+        <section class="slide" id="slide-1">
+            <div class="w-80 h-80 shadow-[0_0_50px_rgba(236,72,153,0.3)] rounded-3xl mb-10 bg-gradient-to-br from-[#1a1a1a] to-[#050505] flex items-center justify-center border-4 border-gray-800 relative overflow-hidden group">
+                <!-- Musical Note SVG Pink -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:scale-110 transition-transform duration-700 drop-shadow-[0_0_20px_rgba(236,72,153,0.6)]">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-black title-font text-white mb-2 tracking-tight text-center">Touch</h1>
+            <h2 class="text-3xl text-brand-light font-medium mb-10">KATSEYE</h2>
+            <button onclick="nextSlide()" class="bg-brand-pink text-white font-black title-font py-4 px-12 rounded-full text-2xl hover:scale-105 transition-transform flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> PLAY LESSON
+            </button>
+        </section>
+
+        <!-- ================= SLIDE 2: VIBE CHECK ================= -->
+        <section class="slide" id="slide-2">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font uppercase">TRACK 01</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-6">Vibe Check</h1>
+            <p class="text-brand-light text-2xl mb-12">How do you listen to your K-pop songs?</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-4xl" id="vibe-options">
+                <button onclick="checkVibe(this)" class="text-left glass-card p-8 text-xl hover:bg-brand-cardHover transition-colors flex items-center gap-6">
+                    <span class="text-5xl">💃</span><span>I dance in my room.</span>
+                </button>
+                <button onclick="checkVibe(this)" class="text-left glass-card p-8 text-xl hover:bg-brand-cardHover transition-colors flex items-center gap-6">
+                    <span class="text-5xl">🎤</span><span>I sing very loud.</span>
+                </button>
+                <button onclick="checkVibe(this)" class="text-left glass-card p-8 text-xl hover:bg-brand-cardHover transition-colors flex items-center gap-6">
+                    <span class="text-5xl">📺</span><span>I watch the Music Video (MV).</span>
+                </button>
+                <button onclick="checkVibe(this)" class="text-left glass-card p-8 text-xl hover:bg-brand-cardHover transition-colors flex items-center gap-6">
+                    <span class="text-5xl">🎧</span><span>I listen with my headphones.</span>
+                </button>
+            </div>
+            <div id="hub-vibe" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-4xl">
+                <p class="text-white text-xl"><strong>Speaking Hub:</strong> "When I listen to K-pop, I..."</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 3: TRIVIA ================= -->
+        <section class="slide" id="slide-3">
+            <div class="text-center mb-10 w-full max-w-5xl">
+                <span class="bg-brand-pink text-white font-bold px-4 py-1 rounded text-sm title-font uppercase tracking-widest">Trivia</span>
+                <h1 class="text-5xl font-black title-font mt-6 mb-4">A Global Group</h1>
+                <p class="text-brand-light text-xl">Test your fan knowledge!</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 w-full max-w-5xl items-center">
+                <div class="bg-[#171717] rounded-2xl p-8 border border-gray-800 shadow-2xl relative">
+                    <span class="text-brand-pink font-bold text-xs tracking-widest uppercase mb-4 block">Question</span>
+                    <h3 class="text-2xl font-bold mb-8 text-white leading-snug">Katseye is a famous global group! The girls were NOT born in the same place. Where are they from?</h3>
+                    <div class="space-y-4 options-group" data-correct="3">
+                        <button onclick="checkTriviaMatch(this, 1)" class="mcq-btn w-full text-left bg-[#262626] hover:bg-gray-600 py-4 px-6 rounded-xl font-bold transition-colors text-lg text-gray-200 border-2 border-transparent">A) They are only from the USA.</button>
+                        <button onclick="checkTriviaMatch(this, 2)" class="mcq-btn w-full text-left bg-[#262626] hover:bg-gray-600 py-4 px-6 rounded-xl font-bold transition-colors text-lg text-gray-200 border-2 border-transparent">B) They are only from South Korea.</button>
+                        <button onclick="checkTriviaMatch(this, 3)" class="mcq-btn w-full text-left bg-[#262626] hover:bg-gray-600 py-4 px-6 rounded-xl font-bold transition-colors text-lg text-gray-200 border-2 border-transparent">C) They are from various countries (USA, Switzerland, Korea, etc).</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-col justify-center p-6">
+                    <h3 class="text-4xl font-black title-font text-white mb-6">Did you know?</h3>
+                    <p class="text-xl text-brand-light mb-6 leading-relaxed">The six members were chosen through a Netflix reality show!</p>
+                </div>
+            </div>
+            
+            <div id="trivia-hub" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-5xl">
+                <p class="text-white text-lg"><strong>Fact:</strong> Katseye was created by Korean and American companies together to be the biggest girl group in the world.</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 4: FANDOM 101 (NEW) ================= -->
+        <section class="slide" id="slide-4">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font uppercase">K-POP CULTURE</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-4">Fandom 101</h1>
+            <p class="text-brand-light text-xl mb-10">K-pop fans have their own special vocabulary in English. Click to learn!</p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-5xl">
+                <div class="flip-card h-48" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front"><h2 class="text-2xl font-black title-font text-white">Bias</h2><span class="text-xs text-gray-500 mt-2 code-font">Click</span></div>
+                        <div class="flip-card-back"><p class="text-xl font-bold">Your favorite member in the group.</p></div>
+                    </div>
+                </div>
+                <div class="flip-card h-48" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front"><h2 class="text-2xl font-black title-font text-white">MV</h2><span class="text-xs text-gray-500 mt-2 code-font">Click</span></div>
+                        <div class="flip-card-back"><p class="text-xl font-bold">Music Video.</p></div>
+                    </div>
+                </div>
+                <div class="flip-card h-48" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front"><h2 class="text-2xl font-black title-font text-white">Comeback</h2><span class="text-xs text-gray-500 mt-2 code-font">Click</span></div>
+                        <div class="flip-card-back"><p class="text-xl font-bold">When a group releases a new song or album.</p></div>
+                    </div>
+                </div>
+                <div class="flip-card h-48" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front"><h2 class="text-2xl font-black title-font text-white">Idol</h2><span class="text-xs text-gray-500 mt-2 code-font">Click</span></div>
+                        <div class="flip-card-back"><p class="text-xl font-bold">A K-pop singer or dancer.</p></div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-5xl">
+                <p class="text-white text-xl"><strong>Speaking Starter:</strong> "My bias in Stray Kids / Katseye is..."</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 5: PRE-TEACHING VOCAB ================= -->
+        <section class="slide" id="slide-5">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font uppercase">TRACK 03</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-4">Vocab Warm-up</h1>
+            <p class="text-brand-light text-xl mb-10">Click to reveal important words from the song.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-4xl" id="vocab-warmup">
+                <button onclick="showVocabFollowUp(this, 'Touch', 'To put your hand on something.', 'What is your favorite object to touch? (ex: my phone, my dog, a soft blanket).')" class="vocab-btn glass-card p-6 text-2xl font-bold text-white hover:text-brand-pink transition-all">Touch</button>
+                <button onclick="showVocabFollowUp(this, 'Catch', 'To grab or hold something that is moving.', 'Can you catch a ball with one hand?')" class="vocab-btn glass-card p-6 text-2xl font-bold text-white hover:text-brand-pink transition-all">Catch</button>
+                <button onclick="showVocabFollowUp(this, 'Heart', 'The organ in your chest that beats.', 'Draw a heart in the air with your hands (like a K-pop idol)!')" class="vocab-btn glass-card p-6 text-2xl font-bold text-white hover:text-brand-pink transition-all">Heart</button>
+                <button onclick="showVocabFollowUp(this, 'Fall', 'To drop to the ground or fall in love.', 'Are you a clumsy person? Do you fall easily?')" class="vocab-btn glass-card p-6 text-2xl font-bold text-white hover:text-brand-pink transition-all">Fall</button>
+            </div>
+            
+            <div id="vocab-warmup-hub" class="hidden mt-8 p-6 speaking-hub rounded-r-xl w-full max-w-4xl text-left">
+                <h3 id="warmup-word-title" class="text-3xl font-black title-font text-brand-pink mb-2">Word</h3>
+                <p id="warmup-word-def" class="text-gray-300 text-lg mb-4 italic border-l-2 border-gray-600 pl-4">Definition</p>
+                <p class="text-white text-xl"><strong>Discuss:</strong> <span id="warmup-word-q" class="font-medium text-brand-light">Question</span></p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 6: PRE-LISTENING DISCUSSION ================= -->
+        <section class="slide" id="slide-6">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font tracking-widest uppercase">Pre-Listening</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-6">Before We Press Play</h1>
+            <p class="text-brand-light text-2xl mb-12">This song became super famous on TikTok!</p>
+            
+            <div class="glass-card p-12 w-full max-w-4xl text-center shadow-2xl border-t-4 border-brand-pink">
+                <p class="text-3xl font-bold leading-relaxed text-white mb-6">Do you like learning K-pop choreographies?</p>
+                <p class="text-xl text-gray-400">Yes, I do! / No, I don't.</p>
+            </div>
+            
+            <button onclick="document.getElementById('hub-pre').classList.remove('hidden')" class="mt-10 border-2 border-white px-8 py-3 rounded-full font-bold hover:bg-white hover:text-black transition-colors text-lg">Teacher's Guide</button>
+            <div id="hub-pre" class="hidden mt-8 p-6 speaking-hub rounded-r-xl w-full max-w-4xl text-left">
+                <p class="text-white text-xl"><strong>Teacher:</strong> Tell your student to watch the dance in the video. The girls make many movements using eye contact and their hands (touch).</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 7: NOW PLAYING (FULL TRACK) ================= -->
+        <section class="slide" id="slide-7">
+            <div class="flex justify-between items-end w-full max-w-5xl mb-6">
+                <h1 class="text-5xl font-black title-font">Now Playing</h1>
+                <span class="bg-white text-black font-bold px-3 py-1 rounded text-xs title-font tracking-widest uppercase">Music Video</span>
+            </div>
+            
+            <div class="w-full max-w-5xl aspect-video rounded-2xl overflow-hidden border border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.8)] bg-black mb-8 relative group">
+                <!-- Katseye - Touch MV -->
+                <iframe class="w-full h-full" src="https://www.youtube.com/embed/l9CZykYZkOQ?rel=0" frameborder="0" allowfullscreen></iframe>
+            </div>
+            
+            <div class="w-full max-w-5xl bg-[#171717] border border-[#262626] rounded-2xl p-6 flex justify-between items-center">
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-brand-pink/20 flex items-center justify-center text-brand-pink">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-xl text-white">Visual Focus</h4>
+                        <p class="text-brand-light text-sm">How many girls are singing in the group? Pay attention to the colors in the MV.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 8: POST-LISTENING ================= -->
+        <section class="slide" id="slide-8">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font tracking-widest uppercase">Post-Listening</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-6">First Impressions</h1>
+            
+            <div class="glass-card p-10 w-full max-w-5xl text-center">
+                <p class="text-3xl font-bold leading-relaxed text-white mb-8">The song is pop and the choreography is amazing.</p>
+                <div class="h-px w-full bg-gray-800 mb-8"></div>
+                <p class="text-2xl text-brand-light">What was your favorite part of the video?</p>
+            </div>
+            
+            <button onclick="document.getElementById('hub-post').classList.remove('hidden')" class="mt-10 border border-brand-pink text-brand-pink px-8 py-3 rounded-full font-bold hover:bg-brand-pink hover:text-white transition-colors text-lg">Speaking Starter</button>
+            <div id="hub-post" class="hidden mt-8 p-6 speaking-hub rounded-r-xl w-full max-w-5xl text-left">
+                <p class="text-white text-xl"><strong>Student:</strong> "My favorite part is when they dance / when they sing / their outfits."</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 9: LISTENING CHECK ================= -->
+        <section class="slide" id="slide-9">
+            <h1 class="text-5xl font-black title-font mb-6">Listening Check</h1>
+            <p class="text-brand-light text-2xl mb-12">What is the word they repeat the most in the chorus?</p>
+            <div class="space-y-4 w-full max-w-4xl">
+                <button onclick="checkMCQ(this, false, 'list-hub1')" class="w-full text-left glass-card p-6 text-xl hover:bg-brand-cardHover">A) Cry</button>
+                <button onclick="checkMCQ(this, false, 'list-hub1')" class="w-full text-left glass-card p-6 text-xl hover:bg-brand-cardHover">B) Stop</button>
+                <button onclick="checkMCQ(this, true, 'list-hub1')" class="w-full text-left glass-card p-6 text-xl hover:bg-brand-cardHover">C) Touch</button>
+            </div>
+            <div id="list-hub1" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-4xl">
+                <p class="text-white text-lg"><strong>Correct!</strong> The main word is 'Touch'. "Just a touch of your love..."</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 10: GRAMMAR TRACK (IMPERATIVE) ================= -->
+        <section class="slide" id="slide-10">
+            <h1 class="text-5xl font-black title-font mb-8">Grammar: Imperatives</h1>
+            <div class="glass-card p-10 w-full max-w-5xl text-left">
+                <p class="text-2xl text-brand-light mb-6 leading-relaxed">
+                    We use the <strong class="text-brand-pink text-3xl font-bold">Imperative</strong> to give an order, an instruction, or make a direct request to someone.
+                </p>
+                
+                <div class="flex flex-col md:flex-row gap-6 mb-8 mt-10">
+                    <div class="flex-1 bg-[#282828] p-8 rounded-2xl border-t-4 border-gray-500">
+                        <h4 class="text-gray-400 font-bold mb-4 uppercase tracking-widest text-sm">In the Song</h4>
+                        <p class="text-3xl font-black title-font mb-4">"<span class="text-brand-pink">Touch</span> my heart."</p>
+                        <p class="text-gray-400 text-lg">She is asking directly for the person to touch her heart.</p>
+                    </div>
+                    <div class="flex-1 bg-[#282828] p-8 rounded-2xl border-t-4 border-white">
+                        <h4 class="text-white font-bold mb-4 uppercase tracking-widest text-sm">In Real Life</h4>
+                        <p class="text-3xl font-black title-font mb-4">"<span class="text-brand-pink">Listen</span> to this song."</p>
+                        <p class="text-gray-300 text-lg">The verb goes at the beginning of the sentence, without using the subject (I/You/He).</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 11: INTERACTIVE GRAMMAR (ENGINE) ================= -->
+        <section class="slide" id="slide-11">
+            <h1 class="text-5xl font-black title-font mb-8">Fact vs. Command</h1>
+            <div class="glass-card p-10 w-full max-w-5xl text-left">
+                <p class="text-2xl text-brand-light mb-10 leading-relaxed text-center">
+                    To make a command, you simply <strong class="text-brand-pink">remove the subject</strong> (You) from the beginning of the sentence!
+                </p>
+                
+                <div class="bg-[#121212] p-10 rounded-2xl border border-gray-800 text-center mb-8 shadow-inner">
+                    <p class="text-gray-400 mb-6 text-lg uppercase tracking-widest font-bold">Click to give the order</p>
+                    
+                    <div class="grammar-switch-container mb-8">
+                        <div id="gram-real" class="grammar-state active text-3xl md:text-5xl font-bold flex flex-col items-center">
+                            <span class="text-white">You listen to Katseye.</span>
+                            <span class="text-xl text-gray-500 mt-4 font-normal">(Fact: You listen to the group.)</span>
+                        </div>
+                        <div id="gram-imaginary" class="grammar-state text-3xl md:text-5xl font-bold flex flex-col items-center">
+                            <span class="text-brand-pink"><span class="line-through text-gray-600 mr-2">You</span> Listen to Katseye!</span>
+                            <span class="text-xl text-brand-pink mt-4 font-normal">(Command: Listen to the group!)</span>
+                        </div>
+                    </div>
+                    
+                    <button onclick="toggleGrammar()" class="bg-white text-black font-bold px-10 py-4 rounded-full hover:bg-brand-pink hover:text-white transition-all text-xl uppercase tracking-tighter">Create Command</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 12: THE IDOL LIFE (NEW) ================= -->
+        <section class="slide" id="slide-12">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font uppercase">VOCAB IN CONTEXT</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-6">The Idol Life</h1>
+            <p class="text-brand-light text-2xl mb-8">Being a K-pop Idol is hard! Companies give them many rules (Commands).</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mb-8">
+                <div class="glass-card p-6 border-l-4 border-brand-pink">
+                    <p class="text-2xl font-bold text-white mb-2">"Wake up at 5 AM."</p>
+                    <p class="text-gray-400">They have to practice all day.</p>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-brand-pink">
+                    <p class="text-2xl font-bold text-white mb-2">"Practice dancing for 8 hours."</p>
+                    <p class="text-gray-400">The choreography must be perfect.</p>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-red-500">
+                    <p class="text-2xl font-bold text-white mb-2">"Don't eat fast food."</p>
+                    <p class="text-gray-400">They have a strict diet.</p>
+                </div>
+                <div class="glass-card p-6 border-l-4 border-red-500">
+                    <p class="text-2xl font-bold text-white mb-2">"Don't date anyone."</p>
+                    <p class="text-gray-400">Some companies don't allow romances.</p>
+                </div>
+            </div>
+
+            <div class="p-6 speaking-hub rounded-r-xl w-full max-w-5xl text-left">
+                <p class="text-white text-xl"><strong>Discuss:</strong> Could you be a K-pop idol? Is it too difficult?</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 13: SENTENCE CONSTRUCTOR ================= -->
+        <section class="slide" id="slide-13">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font uppercase">Sentence Builder</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-6">Build the Negative Command</h1>
+            <p class="text-brand-light text-xl mb-12">To say NO in a command, we use 'Don't'. Click the words to form the sentence.</p>
+            
+            <div class="glass-card p-10 w-full max-w-4xl text-center">
+                <div class="text-3xl font-bold mb-12 leading-loose">
+                    "<span class="constructor-blank" id="c-blank1" onclick="returnPill(1)"></span> <span class="constructor-blank" id="c-blank2" onclick="returnPill(2)"></span> the music."
+                </div>
+                
+                <div class="flex gap-4 justify-center flex-wrap" id="c-bank">
+                    <button class="constructor-pill bg-[#282828] border border-gray-600 px-6 py-3 rounded-xl font-bold text-xl" onclick="fillConstructor(this, 'play')">play</button>
+                    <button class="constructor-pill bg-[#282828] border border-gray-600 px-6 py-3 rounded-xl font-bold text-xl" onclick="fillConstructor(this, 'Don\\'t')">Don't</button>
+                    <button class="constructor-pill bg-[#282828] border border-gray-600 px-6 py-3 rounded-xl font-bold text-xl" onclick="fillConstructor(this, 'stop')">stop</button>
+                    <button class="constructor-pill bg-[#282828] border border-gray-600 px-6 py-3 rounded-xl font-bold text-xl" onclick="fillConstructor(this, 'not')">not</button>
+                </div>
+            </div>
+
+            <div id="constructor-hub" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-4xl">
+                <p class="text-white text-xl font-bold">Awesome! 'Don't stop the music'.</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 14: GRAMMAR DRILL ================= -->
+        <section class="slide" id="slide-14">
+            <h1 class="text-5xl font-black title-font mb-6">Grammar Drill</h1>
+            <p class="text-brand-light text-2xl mb-12">How would the singer give a positive order using 'Catch'?</p>
+            <div class="text-3xl font-bold mb-10 glass-card p-8 leading-relaxed text-center">
+                "<span class="text-brand-pink underline">_______</span> me if you can."
+            </div>
+            <div class="flex flex-col gap-4 w-full max-w-4xl justify-center">
+                <button onclick="checkMCQ(this, false, 'gram-hub2')" class="w-full glass-card p-6 text-xl font-bold hover:bg-brand-cardHover text-left border-2 border-transparent">A) You catch</button>
+                <button onclick="checkMCQ(this, true, 'gram-hub2')" class="w-full glass-card p-6 text-xl font-bold hover:bg-brand-cardHover text-left border-2 border-transparent">B) Catch</button>
+                <button onclick="checkMCQ(this, false, 'gram-hub2')" class="w-full glass-card p-6 text-xl font-bold hover:bg-brand-cardHover text-left border-2 border-transparent">C) Catching</button>
+            </div>
+            <div id="gram-hub2" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-4xl">
+                <p class="text-white text-lg"><strong>Perfect!</strong> The bare verb at the beginning is already a command!</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 15: DISCUSSION (FLIP CARDS) ================= -->
+        <section class="slide" id="slide-15">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font tracking-widest uppercase">Premium Discussion</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-4">Fan Talk</h1>
+            <p class="text-brand-light text-xl mb-10">Click the cards to reveal and practice your English by talking about music!</p>
+            
+            <!-- Flip Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-5xl">
+                
+                <!-- Card 1 -->
+                <div class="flip-card h-56" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <h2 class="text-3xl font-black title-font text-white">The Bias 💖<br><span class="text-sm font-normal text-gray-400 mt-2 block code-font">Click to read</span></h2>
+                        </div>
+                        <div class="flip-card-back p-6 flex-col">
+                            <p class="text-2xl font-bold">Who is your favorite member (bias) in Stray Kids or Katseye?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="flip-card h-56" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <h2 class="text-3xl font-black title-font text-white">The Dance 💃<br><span class="text-sm font-normal text-gray-400 mt-2 block code-font">Click to read</span></h2>
+                        </div>
+                        <div class="flip-card-back p-6 flex-col">
+                            <p class="text-2xl font-bold">Can you dance to K-pop choreography?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="flip-card h-56" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <h2 class="text-3xl font-black title-font text-white">The Song 🎧<br><span class="text-sm font-normal text-gray-400 mt-2 block code-font">Click to read</span></h2>
+                        </div>
+                        <div class="flip-card-back p-6 flex-col">
+                            <p class="text-2xl font-bold">What is your favorite song right now?</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 4 -->
+                <div class="flip-card h-56" onclick="this.classList.toggle('flipped')">
+                    <div class="flip-card-inner">
+                        <div class="flip-card-front">
+                            <h2 class="text-3xl font-black title-font text-white">The MV 📺<br><span class="text-sm font-normal text-gray-400 mt-2 block code-font">Click to read</span></h2>
+                        </div>
+                        <div class="flip-card-back p-6 flex-col">
+                            <p class="text-2xl font-bold">Do you like to watch Music Videos on YouTube?</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-5xl text-left">
+                <p class="text-white text-lg"><strong>Teacher:</strong> Encourage the student to use the verb 'To Be' and short answers ('Yes, I can', 'My favorite is...').</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 16: MINIGAME 2 (DROP THE BEAT) ================= -->
+        <section class="slide" id="slide-16">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font">PREMIUM MINIGAME</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-4">Drop the Beat</h1>
+            <p class="text-brand-light text-xl mb-10">Put the words in the correct order to form the famous chorus.</p>
+            
+            <div id="drop-answer-box" class="min-h-[100px] w-full max-w-4xl bg-[#181818] border-2 border-dashed border-gray-600 rounded-2xl p-6 flex flex-wrap gap-4 items-center mb-10"></div>
+            <div id="drop-word-bank" class="flex flex-wrap gap-4 justify-center mb-10 w-full max-w-4xl"></div>
+            <div class="flex gap-4 justify-center">
+                <button onclick="resetDropBeat()" class="px-8 py-3 rounded-full border border-gray-500 font-bold hover:text-white transition-colors">Reset</button>
+                <button onclick="checkDropBeat()" class="bg-white text-black font-black px-10 py-3 rounded-full hover:bg-brand-pink hover:text-white transition-colors">CHECK</button>
+            </div>
+            <div id="drop-hub" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-4xl">
+                <p class="text-white text-2xl font-bold italic">"Just a touch of your love"</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 17: MINIGAME 3 (CATCH THE BUG) ================= -->
+        <section class="slide" id="slide-17">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font">PREMIUM MINIGAME</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-4">Catch the Bug</h1>
+            <p class="text-brand-light text-xl mb-12">Click the incorrect word to fix the English command.</p>
+            <div class="text-4xl font-black title-font glass-card p-12 text-center">
+                "Don't <span id="bug-word" class="cursor-pointer border-b-4 border-dashed border-[#ef4444] text-[#ef4444] pb-1" onclick="fixBug()">touches</span> my phone."
+            </div>
+            <div id="bug-input-container" class="hidden mt-10 flex flex-col items-center gap-6">
+                <div class="flex gap-3">
+                    <input type="text" id="bug-input" class="bg-[#121212] border border-gray-600 rounded-full px-8 py-3 text-2xl font-bold text-white text-center focus:border-brand-pink uppercase">
+                    <button onclick="checkBug()" class="bg-brand-pink text-white font-black px-8 py-3 rounded-full hover:scale-105 transition-transform">FIX</button>
+                </div>
+            </div>
+            <div id="bug-hub" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-2xl text-left">
+                <p class="text-white text-lg">In the imperative, the verb is in its base form (no 's'). 'Don't <strong>TOUCH</strong>'.</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 18: MINIGAME 4 (BAMBOOZLE RAPID FIRE) ================= -->
+        <section class="slide" id="slide-18">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-red-800 text-white font-bold px-3 py-1 rounded text-xs title-font tracking-widest uppercase">Bamboozle Mode</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-4">Rapid Fire T/F</h1>
+            <p class="text-brand-light text-xl mb-10">Answer 3 True or False questions in a row without missing!</p>
+            
+            <div id="rapid-q1" class="rapid-card glass-card p-10 w-full max-w-4xl text-center border-t-4 border-red-800">
+                <span class="text-brand-pink font-bold text-sm uppercase tracking-widest mb-4 block">Question 1 / 3</span>
+                <p class="text-3xl font-bold mb-10">An English command always starts with 'You'.</p>
+                <div class="flex gap-6 justify-center">
+                    <button onclick="checkRapid(this, 1, false)" class="w-40 bg-[#282828] hover:bg-white hover:text-black py-4 rounded-full font-bold text-xl transition-colors">True</button>
+                    <button onclick="checkRapid(this, 1, true)" class="w-40 bg-[#282828] hover:bg-white hover:text-black py-4 rounded-full font-bold text-xl transition-colors">False</button>
+                </div>
+            </div>
+
+            <div id="rapid-q2" class="rapid-card hidden-card glass-card p-10 w-full max-w-4xl text-center border-t-4 border-red-800">
+                <span class="text-brand-pink font-bold text-sm uppercase tracking-widest mb-4 block">Question 2 / 3</span>
+                <p class="text-3xl font-bold mb-10">'Bias' means your favorite member in a K-pop group.</p>
+                <div class="flex gap-6 justify-center">
+                    <button onclick="checkRapid(this, 2, true)" class="w-40 bg-[#282828] hover:bg-white hover:text-black py-4 rounded-full font-bold text-xl transition-colors">True</button>
+                    <button onclick="checkRapid(this, 2, false)" class="w-40 bg-[#282828] hover:bg-white hover:text-black py-4 rounded-full font-bold text-xl transition-colors">False</button>
+                </div>
+            </div>
+
+            <div id="rapid-q3" class="rapid-card hidden-card glass-card p-10 w-full max-w-4xl text-center border-t-4 border-red-800">
+                <span class="text-brand-pink font-bold text-sm uppercase tracking-widest mb-4 block">Question 3 / 3</span>
+                <p class="text-3xl font-bold mb-10">To give a negative order, we use 'Don't'.</p>
+                <div class="flex gap-6 justify-center">
+                    <button onclick="checkRapid(this, 3, true)" class="w-40 bg-[#282828] hover:bg-white hover:text-black py-4 rounded-full font-bold text-xl transition-colors">True</button>
+                    <button onclick="checkRapid(this, 3, false)" class="w-40 bg-[#282828] hover:bg-white hover:text-black py-4 rounded-full font-bold text-xl transition-colors">False</button>
+                </div>
+            </div>
+
+            <div id="rapid-hub" class="hidden mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-4xl text-center">
+                <p class="text-white text-4xl font-black title-font">FLAWLESS VICTORY! 🏆</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 19: THE LYRICS VIEW ================= -->
+        <section class="slide" id="slide-19">
+            <h1 class="text-5xl font-black title-font mb-2">The Lyrics View</h1>
+            <p class="text-brand-light text-xl mb-8">Click on the <span class="text-brand-pink font-bold">highlighted words</span> to open the Dictionary.</p>
+            <div class="w-full max-w-5xl bg-[#171717] border border-[#262626] rounded-3xl p-10 overflow-y-auto max-h-[50vh]">
+                <div class="space-y-6 text-[2.5rem] md:text-[3.5rem] font-black title-font tracking-tighter leading-[1.1] text-gray-600">
+                    <p class="text-white">Just a <span class="lyric-highlight" onclick="openVocab('touch')">touch</span> of your love</p>
+                    <p class="hover:text-gray-400">Is enough to knock me off of my feet</p>
+                    <p class="text-white">All week</p>
+                    <p class="hover:text-gray-400">Just a touch of your <span class="lyric-highlight" onclick="openVocab('love')">love</span></p>
+                    <p class="text-white">Oh, <span class="lyric-highlight" onclick="openVocab('catch')">catch</span> me 'cause I'm falling</p>
+                    <p class="hover:text-gray-400">I'm falling, <span class="lyric-highlight" onclick="openVocab('catch')">catch</span> me 'cause I'm falling</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 20: PRONUNCIATION STATION ================= -->
+        <section class="slide" id="slide-20">
+            <h1 class="text-5xl font-black title-font mb-4">Pronunciation Station</h1>
+            <p class="text-brand-light text-xl mb-10">Connected Speech</p>
+            <div class="flex gap-8 w-full max-w-4xl">
+                <div class="flex-1 glass-card p-8 text-center border-l-4 border-brand-pink">
+                    <p class="text-2xl font-bold text-gray-400 mb-2">Written</p>
+                    <p class="text-4xl font-black title-font text-white mb-2">"Touch of"</p>
+                </div>
+                <div class="flex-1 glass-card p-8 text-center border-r-4 border-brand-pink shadow-[0_0_20px_rgba(236,72,153,0.1)]">
+                    <p class="text-2xl font-bold text-gray-400 mb-2">Spoken (Sung)</p>
+                    <p class="text-4xl font-black title-font text-brand-pink mb-2">"Touch-a"</p>
+                </div>
+            </div>
+            <div class="mt-10 p-6 speaking-hub rounded-r-xl w-full max-w-4xl">
+                <p class="text-white text-lg">In pop songs, they link words together. 'Touch of' sounds like 'Toucha'. Practice: <em>"Just a toucha your love..."</em></p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 21: THE FAN SIGN (ROLEPLAY) ================= -->
+        <section class="slide" id="slide-21">
+            <h1 class="text-5xl font-black title-font mb-4">Roleplay: The Fan Sign</h1>
+            <p class="text-brand-light text-xl mb-12">Teacher: K-pop Idol. Student: The Fan.</p>
+            <div class="flip-card w-full max-w-3xl mx-auto" onclick="this.classList.toggle('flipped')">
+                <div class="flip-card-inner">
+                    <div class="flip-card-front">
+                        <h2 class="text-4xl font-black title-font">Your Mission<br><span class="text-sm font-normal text-brand-light mt-4 block code-font">Click to reveal</span></h2>
+                    </div>
+                    <div class="flip-card-back p-8 flex-col">
+                        <p class="text-2xl font-bold mb-4">You finally meet your favorite Idol! Give them 3 polite commands.</p>
+                        <p class="text-lg text-white font-medium mt-4">Example: "Please sign my album.", "Please look at the camera."</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 22: DEBUT PROJECT ================= -->
+        <section class="slide" id="slide-22">
+            <div class="flex items-center gap-4 mb-4">
+                <span class="bg-brand-pink text-white font-bold px-3 py-1 rounded text-xs title-font tracking-widest uppercase">Creative Task</span>
+            </div>
+            <h1 class="text-5xl font-black title-font mb-6">Debut Project</h1>
+            <p class="text-brand-light text-2xl mb-8">You are a K-pop manager! Use commands to build your new group.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mb-8">
+                <div class="glass-card p-6 border-t-4 border-brand-pink">
+                    <p class="text-xl font-bold text-brand-pink mb-4 uppercase">Step 1</p>
+                    <p class="text-white text-lg">"Choose a name for the group."</p>
+                </div>
+                <div class="glass-card p-6 border-t-4 border-brand-pink">
+                    <p class="text-xl font-bold text-brand-pink mb-4 uppercase">Step 2</p>
+                    <p class="text-white text-lg">"Pick a concept (Cute, Girl Crush, Dark)."</p>
+                </div>
+                <div class="glass-card p-6 border-t-4 border-brand-pink">
+                    <p class="text-xl font-bold text-brand-pink mb-4 uppercase">Step 3</p>
+                    <p class="text-white text-lg">"Select the number of members."</p>
+                </div>
+            </div>
+
+            <div class="p-6 speaking-hub rounded-r-xl w-full max-w-5xl text-left">
+                <p class="text-white text-xl"><strong>Student answers:</strong> "The name is...", "The concept is..."</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 23: SONG REVIEW ================= -->
+        <section class="slide" id="slide-23">
+            <h1 class="text-5xl font-black title-font mb-6">Song Review</h1>
+            <p class="text-brand-light text-2xl mb-12">How many stars does Katseye deserve?</p>
+            
+            <div class="flex justify-center gap-4 w-full max-w-4xl mb-10">
+                <button onclick="rateSong(this, 1)" class="star-btn text-6xl opacity-50 hover:opacity-100 hover:scale-110 transition-all drop-shadow-lg grayscale hover:grayscale-0">⭐</button>
+                <button onclick="rateSong(this, 2)" class="star-btn text-6xl opacity-50 hover:opacity-100 hover:scale-110 transition-all drop-shadow-lg grayscale hover:grayscale-0">⭐</button>
+                <button onclick="rateSong(this, 3)" class="star-btn text-6xl opacity-50 hover:opacity-100 hover:scale-110 transition-all drop-shadow-lg grayscale hover:grayscale-0">⭐</button>
+                <button onclick="rateSong(this, 4)" class="star-btn text-6xl opacity-50 hover:opacity-100 hover:scale-110 transition-all drop-shadow-lg grayscale hover:grayscale-0">⭐</button>
+                <button onclick="rateSong(this, 5)" class="star-btn text-6xl opacity-50 hover:opacity-100 hover:scale-110 transition-all drop-shadow-lg grayscale hover:grayscale-0">⭐</button>
+            </div>
+            
+            <div id="review-hub" class="hidden mt-6 p-6 speaking-hub rounded-r-xl w-full max-w-4xl text-left">
+                <p class="text-white text-xl font-bold mb-2">You gave it <span id="star-count" class="text-brand-pink text-2xl">X</span> stars!</p>
+                <p class="text-white text-lg"><strong>Speaking Starter:</strong> "I give this song <span class="text-brand-pink">___</span> stars because it is..." (cool, fun, happy).</p>
+            </div>
+        </section>
+
+        <!-- ================= SLIDE 24: PLATINUM RECORD ================= -->
+        <section class="slide" id="slide-24">
+            <div class="w-80 h-80 rounded-full bg-gradient-to-tr from-gray-800 via-gray-500 to-gray-900 shadow-[0_0_80px_rgba(236,72,153,0.3)] mb-10 flex items-center justify-center relative border-8 border-[#0a0a0a] animate-[spin_10s_linear_infinite]">
+                <div class="w-28 h-28 rounded-full bg-black border-4 border-brand-pink flex items-center justify-center z-20"><div class="w-5 h-5 rounded-full bg-white"></div></div>
+                <div class="absolute w-72 h-72 rounded-full border border-black/20"></div>
+                <div class="absolute w-56 h-56 rounded-full border border-black/20"></div>
+                <div class="absolute w-48 h-48 rounded-full border border-black/20"></div>
+            </div>
+            <span class="bg-brand-pink text-white font-bold px-4 py-1 rounded text-sm tracking-widest title-font mb-4">MISSION COMPLETE</span>
+            <h1 class="text-6xl md:text-8xl font-black title-font text-white mb-6 tracking-tight">Platinum Record</h1>
+            <p class="text-2xl text-brand-light mb-12">You shined on stage today! Class dismissed.</p>
+            <button onclick="goToSlide(0)" class="bg-transparent border-2 border-white text-white font-bold py-4 px-12 rounded-full hover:bg-white hover:text-black transition-colors text-xl">Restart Session</button>
+        </section>
+
+        <!-- ================= PRAISE OVERLAY ================= -->
+        <div id="praise-overlay" class="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+            <div id="praise-card" class="bg-black/90 backdrop-blur-xl border-4 border-brand-pink p-12 rounded-3xl text-center transform scale-50 transition-all duration-500 shadow-[0_0_100px_rgba(236,72,153,0.8)] flex flex-col items-center">
+                <h1 id="praise-main" class="text-7xl md:text-8xl font-black title-font text-white mb-4 drop-shadow-[0_0_20px_rgba(236,72,153,0.8)]">DAEBAK! 🌟</h1>
+                <p id="praise-sub" class="text-3xl md:text-4xl text-brand-pink font-bold">Awesome job!</p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ================= SIDEBAR: BEHIND THE LYRICS ================= -->
+    <aside id="vocab-panel" class="fixed top-0 right-0 h-full w-full md:w-[450px] bg-[#0a0a0a] border-l border-[#282828] z-50 transform translate-x-full transition-transform duration-500 ease-in-out flex flex-col shadow-2xl">
+        <div class="p-6 border-b border-[#282828] flex justify-between items-center bg-[#171717]">
+            <h2 class="text-xl font-black title-font flex items-center gap-3">
+                <span class="bg-white text-black px-2 py-0.5 rounded text-xs">BEHIND THE LYRICS</span>
+            </h2>
+            <button onclick="toggleDictionary()" class="text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        <div class="p-8 flex-1 overflow-y-auto">
+            <h3 id="dict-word" class="text-4xl font-black title-font text-brand-pink mb-1 capitalize">Word</h3>
+            <p id="dict-phonetic" class="code-font text-gray-500 mb-8 text-lg">/phonetic/</p>
+            <div class="mb-8">
+                <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-3 code-font">Meaning</p>
+                <p id="dict-meaning" class="text-xl font-light text-gray-200 leading-relaxed">English meaning here.</p>
+            </div>
+            <div id="dict-context-container" class="mb-10 bg-[#171717] p-6 rounded-2xl border-l-4 border-white">
+                <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-3 code-font">In the Song (Context)</p>
+                <p id="dict-context" class="italic text-gray-300 text-lg leading-relaxed">Context</p>
+            </div>
+            <div id="dict-question-container" class="mt-auto bg-brand-pink/10 border border-brand-pink/30 p-6 rounded-2xl">
+                <p class="text-xs text-brand-pink uppercase tracking-widest font-bold mb-3 code-font">Let's Talk</p>
+                <p id="dict-question" class="font-medium text-xl text-white leading-snug">Question</p>
+            </div>
+            
+            <div id="dict-dynamic-notice" class="hidden mt-auto bg-[#282828] border border-gray-600 p-6 rounded-2xl">
+                <p class="text-xs text-gray-400 uppercase tracking-widest font-bold mb-3 code-font flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    WOLFFY SMART DICT
+                </p>
+                <p class="font-medium text-base text-gray-300 leading-snug">Live translation via API.</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ================= SIDEBAR: TEACHER TOOLS ================= -->
+    <aside id="whiteboardPanel" class="fixed top-0 left-0 h-full w-full md:w-[500px] bg-[#121212] border-r border-[#282828] text-white z-50 transform -translate-x-full transition-transform duration-500 flex flex-col shadow-2xl">
+        <div class="p-6 border-b border-[#282828] flex justify-between items-center bg-[#0a0a0a]">
+            <h2 class="text-xl font-black title-font text-brand-pink">Teacher Tools</h2>
+            <button onclick="toggleWhiteboard()" class="text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+        </div>
+        
+        <!-- K-Pop Praise Section -->
+        <div class="p-6 border-b border-[#333] bg-[#1a1a1a]">
+            <span class="text-sm font-bold text-gray-400 code-font uppercase block mb-4 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                K-Pop Praise Drops
+            </span>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="triggerPraise('Daebak! 🌟', 'Awesome!')" class="bg-[#0a0a0a] border border-brand-pink/30 hover:bg-brand-pink hover:text-white text-brand-pink font-bold py-3 rounded-xl text-sm transition-all shadow-[0_0_15px_rgba(236,72,153,0.1)] hover:scale-105">Daebak! 🌟</button>
+                <button onclick="triggerPraise('Slay! ✨', 'You killed it!')" class="bg-[#0a0a0a] border border-brand-pink/30 hover:bg-brand-pink hover:text-white text-brand-pink font-bold py-3 rounded-xl text-sm transition-all shadow-[0_0_15px_rgba(236,72,153,0.1)] hover:scale-105">Slay! ✨</button>
+                <button onclick="triggerPraise('Main Vocal! 🎤', 'Perfect pronunciation!')" class="bg-[#0a0a0a] border border-brand-pink/30 hover:bg-brand-pink hover:text-white text-brand-pink font-bold py-3 rounded-xl text-sm transition-all shadow-[0_0_15px_rgba(236,72,153,0.1)] hover:scale-105">Main Vocal! 🎤</button>
+                <button onclick="triggerPraise('Fighting! ✊', 'Keep it up!')" class="bg-[#0a0a0a] border border-brand-pink/30 hover:bg-brand-pink hover:text-white text-brand-pink font-bold py-3 rounded-xl text-sm transition-all shadow-[0_0_15px_rgba(236,72,153,0.1)] hover:scale-105">Fighting! ✊</button>
+            </div>
+        </div>
+
+        <!-- Text Notepad Section -->
+        <div class="p-4 bg-[#121212] flex items-center justify-between border-b border-[#333]">
+            <div class="flex gap-4 items-center">
+                <span class="text-sm font-bold text-gray-400 code-font uppercase">Class Notes</span>
+                <button onclick="copyNotepad()" class="text-sm font-bold text-gray-300 hover:text-brand-pink flex items-center gap-2 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg> Copy
+                </button>
+            </div>
+            <button onclick="clearNotepad()" class="text-gray-400 hover:text-red-500 text-sm font-bold code-font transition-colors">Clear All</button>
+        </div>
+        <div class="flex-1 bg-[#050505] relative p-6">
+            <textarea id="teacher-notepad" class="notepad-textarea w-full h-full text-white text-xl p-2 tracking-wide" placeholder="Type your lesson notes, corrections, and K-pop vocabulary here..."></textarea>
+        </div>
+    </aside>
+
+    <!-- ================= PLAYER FOOTER ================= -->
+    <div id="player-bar" class="h-24 bg-[#121212] border-t border-[#282828] fixed bottom-0 w-full z-40 flex items-center px-6 justify-between">
+        <div class="flex items-center gap-4 w-1/3">
+            <div class="w-14 h-14 rounded bg-gradient-to-br from-[#1a1a1a] to-[#050505] border border-gray-700 flex items-center justify-center shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 18V5l12-2v13"></path>
+                    <circle cx="6" cy="18" r="3"></circle>
+                    <circle cx="18" cy="16" r="3"></circle>
+                </svg>
+            </div>
+            <div class="hidden md:block">
+                <p class="font-bold text-white text-sm">Touch</p>
+                <p class="text-xs text-brand-light">Katseye • A1 Lesson</p>
+            </div>
+            <button onclick="toggleWhiteboard()" class="text-gray-400 hover:text-brand-pink ml-2 flex items-center gap-1 group transition-colors" title="Teacher Tools">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                <span class="text-[10px] uppercase font-bold tracking-widest opacity-0 group-hover:opacity-100 transition-opacity hidden md:block">Teacher Tools</span>
+            </button>
+        </div>
+        <div class="flex flex-col items-center w-1/3 max-w-xl">
+            <div class="flex items-center gap-6 mb-2">
+                <button onclick="prevSlide()" id="prevBtn" class="text-brand-light hover:text-white disabled:opacity-30">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+                </button>
+                <button class="bg-white text-black rounded-full p-2.5 hover:scale-105" onclick="togglePlayPause(this)">
+                    <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="hidden"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+                <button onclick="nextSlide()" id="nextBtn" class="text-brand-light hover:text-white disabled:opacity-30">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+                </button>
+            </div>
+            <div class="w-full flex items-center gap-3 text-xs text-brand-light code-font">
+                <span id="time-current">0:00</span>
+                <div class="h-1.5 flex-1 bg-[#4d4d4d] rounded-full overflow-hidden group">
+                    <div id="progress-bar" class="h-full bg-white group-hover:bg-brand-pink w-0 transition-all duration-300"></div>
+                </div>
+                <span id="time-total">2:17</span>
+            </div>
+        </div>
+        <div class="flex items-center justify-end gap-4 w-1/3 text-brand-light">
+            <button onclick="toggleFullScreen()" class="flex items-center justify-center gap-3 bg-brand-pink text-white px-6 py-3 rounded-full transition-all font-black title-font text-base shadow-[0_0_20px_rgba(236,72,153,0.4)] hover:scale-110 hover:bg-white hover:text-black animate-[pulse_3s_infinite]" title="Toggle Fullscreen">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                <span class="hidden md:inline uppercase tracking-widest">FULLSCREEN</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ================= JAVASCRIPT LOGIC ================= -->
+    <script>
+        // Dictionary Data for A1 Level
+        const vocabData = {
+            'touch': { phonetic: '/tʌtʃ/', def: 'To put your hand on something.', context: '"Just a touch of your love" - Just a small contact with your love.', speak: 'What is your favorite object to touch? (Ex: my phone, my dog).' },
+            'catch': { phonetic: '/kætʃ/', def: 'To grab or hold something that is falling or moving.', context: '"Catch me \'cause I\'m falling" - Hold me because I am dropping down.', speak: 'Can you catch a ball with one hand?' },
+            'love': { phonetic: '/lʌv/', def: 'A very strong feeling of affection.', context: '"Just a touch of your love" - A small amount of your affection.', speak: 'Who do you love the most in your family?' }
+        };
+
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        // Total slides dynamically counts all sections with class .slide
+        const totalSlides = slides.length; 
+
+        function init() { 
+            updateUI(); 
+            setupDropBeat();
+            
+            document.addEventListener('dblclick', handleWordSelection);
+            document.addEventListener('touchend', () => { setTimeout(handleWordSelection, 150); });
+        }
+        
+        function nextSlide() {
+            if (currentSlide < totalSlides - 1) {
+                slides[currentSlide].classList.remove('active');
+                currentSlide++;
+                slides[currentSlide].classList.add('active');
+                updateUI();
+                if(currentSlide === totalSlides - 1) shootConfetti();
+            }
+        }
+        function prevSlide() {
+            if (currentSlide > 0) {
+                slides[currentSlide].classList.remove('active');
+                currentSlide--;
+                slides[currentSlide].classList.add('active');
+                updateUI();
+            }
+        }
+        function goToSlide(index) {
+            slides[currentSlide].classList.remove('active');
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            updateUI();
+        }
+
+        function updateUI() {
+            const progress = (currentSlide / (totalSlides - 1)) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            const totalSecs = 137; 
+            const curSecs = Math.floor((progress / 100) * totalSecs);
+            document.getElementById('time-current').innerText = `${Math.floor(curSecs/60)}:${(curSecs%60).toString().padStart(2,'0')}`;
+            document.getElementById('prevBtn').disabled = currentSlide === 0;
+            document.getElementById('nextBtn').disabled = currentSlide === totalSlides - 1;
+        }
+
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(e=>console.log(e)); } 
+            else { if (document.exitFullscreen) { document.exitFullscreen(); } }
+        }
+        function togglePlayPause() {
+            document.getElementById('playIcon').classList.toggle('hidden');
+            document.getElementById('pauseIcon').classList.toggle('hidden');
+        }
+        function toggleDictionary() { document.getElementById('vocab-panel').classList.toggle('translate-x-full'); }
+        function toggleWhiteboard() {
+            const b = document.getElementById('whiteboardPanel');
+            b.classList.toggle('-translate-x-full');
+        }
+
+        // Teacher Notepad & Praise Functions
+        function clearNotepad() { document.getElementById('teacher-notepad').value = ''; }
+        function copyNotepad() {
+            const text = document.getElementById('teacher-notepad');
+            text.select(); document.execCommand('copy');
+        }
+
+        function triggerPraise(mainText, subText) {
+            const panel = document.getElementById('whiteboardPanel');
+            if(!panel.classList.contains('-translate-x-full')) {
+                panel.classList.add('-translate-x-full');
+            }
+
+            const overlay = document.getElementById('praise-overlay');
+            const card = document.getElementById('praise-card');
+            
+            document.getElementById('praise-main').innerText = mainText;
+            document.getElementById('praise-sub').innerText = subText;
+
+            overlay.classList.remove('opacity-0', 'pointer-events-none');
+            overlay.classList.add('opacity-100');
+            card.classList.replace('scale-50', 'scale-110');
+            
+            shootConfetti();
+
+            setTimeout(() => {
+                card.classList.replace('scale-110', 'scale-50');
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        // Interactive Grammar Switcher
+        function toggleGrammar() {
+            const real = document.getElementById('gram-real');
+            const imaginary = document.getElementById('gram-imaginary');
+            if (real.classList.contains('active')) {
+                real.classList.remove('active');
+                imaginary.classList.add('active');
+            } else {
+                imaginary.classList.remove('active');
+                real.classList.add('active');
+            }
+        }
+
+        // Open Dictionary
+        function openVocab(key) {
+            const d = vocabData[key];
+            if(!d) return;
+            document.getElementById('dict-word').innerText = key.replace(/-/g, ' ');
+            document.getElementById('dict-phonetic').innerText = d.phonetic;
+            document.getElementById('dict-meaning').innerText = d.def;
+            document.getElementById('dict-context').innerText = `"${d.context}"`;
+            document.getElementById('dict-question').innerText = d.speak;
+            
+            document.getElementById('dict-context-container').classList.remove('hidden');
+            document.getElementById('dict-question-container').classList.remove('hidden');
+            document.getElementById('dict-dynamic-notice').classList.add('hidden');
+
+            document.getElementById('vocab-panel').classList.remove('translate-x-full');
+        }
+
+        async function handleWordSelection() {
+            const selection = window.getSelection();
+            if (!selection) return;
+            const word = selection.toString().trim().toLowerCase().replace(/[^a-z'-]/g, '');
+            if (word && word.length > 2) {
+                if (window.getSelection) { window.getSelection().removeAllRanges(); }
+                fetchDynamicWord(word);
+            }
+        }
+
+        async function fetchDynamicWord(word) {
+            try {
+                const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                const entry = data[0];
+                const phonetic = entry.phonetic || (entry.phonetics && entry.phonetics.find(p => p.text) ? entry.phonetics.find(p => p.text).text : '/.../');
+                const definition = entry.meanings[0].definitions[0].definition;
+
+                document.getElementById('dict-word').innerText = word;
+                document.getElementById('dict-phonetic').innerText = phonetic;
+                document.getElementById('dict-meaning').innerText = definition;
+                
+                document.getElementById('dict-context-container').classList.add('hidden');
+                document.getElementById('dict-question-container').classList.add('hidden');
+                document.getElementById('dict-dynamic-notice').classList.remove('hidden');
+
+                document.getElementById('vocab-panel').classList.remove('translate-x-full');
+            } catch (error) { console.log('Dictionary lookup failed:', error); }
+        }
+
+        // General MCQ Logic
+        function checkMCQ(btn, isCorrect, hubId) {
+            const siblings = btn.parentElement.children;
+            for(let opt of siblings) opt.classList.remove('border-brand-pink', 'bg-brand-pink/10', 'border-[#ef4444]');
+            if(isCorrect) {
+                btn.classList.add('border-brand-pink', 'bg-brand-pink/10');
+                document.getElementById(hubId).classList.remove('hidden');
+            } else {
+                btn.classList.add('border-[#ef4444]', 'shake');
+                setTimeout(() => btn.classList.remove('shake'), 400);
+            }
+        }
+        function checkVibe(btn) { checkMCQ(btn, true, 'hub-vibe'); } 
+
+        function checkTriviaMatch(btn, answerIndex) {
+            const group = btn.closest('.options-group');
+            const correct = group.getAttribute('data-correct');
+            const buttons = group.querySelectorAll('.mcq-btn');
+            
+            buttons.forEach(b => {
+                b.classList.remove('border-brand-pink', 'bg-brand-pink', 'text-white');
+                b.classList.add('bg-[#262626]', 'text-gray-200');
+            });
+
+            if (answerIndex.toString() === correct) {
+                btn.classList.replace('bg-[#262626]', 'bg-brand-pink');
+                btn.classList.remove('text-gray-200');
+                btn.classList.add('text-white', 'border-brand-pink');
+                document.getElementById('trivia-hub').classList.remove('hidden');
+            } else {
+                btn.classList.add('border-[#ef4444]', 'shake');
+                setTimeout(() => btn.classList.remove('shake', 'border-[#ef4444]'), 400);
+            }
+        }
+
+        function showVocabFollowUp(btn, word, meaning, question) {
+            document.querySelectorAll('.vocab-btn').forEach(b => {
+                b.classList.remove('border-brand-pink', 'text-brand-pink', 'bg-brand-pink/10');
+                b.classList.add('text-white');
+            });
+            btn.classList.remove('text-white');
+            btn.classList.add('border-brand-pink', 'text-brand-pink', 'bg-brand-pink/10');
+            document.getElementById('warmup-word-title').innerText = word;
+            document.getElementById('warmup-word-def').innerText = meaning;
+            document.getElementById('warmup-word-q').innerText = question;
+            document.getElementById('vocab-warmup-hub').classList.remove('hidden');
+        }
+
+        // Sentence Constructor
+        let activeBlank = 1;
+        const expectedConstructor = { 1: "Don't", 2: "stop" };
+
+        function fillConstructor(btn, word) {
+            if(activeBlank > 2) return;
+            if(expectedConstructor[activeBlank] === word) {
+                const targetBlank = document.getElementById(`c-blank${activeBlank}`);
+                targetBlank.innerText = word;
+                targetBlank.classList.add('filled');
+                btn.classList.add('used');
+                activeBlank++;
+                
+                if(activeBlank > 2) {
+                    document.getElementById('constructor-hub').classList.remove('hidden');
+                    shootConfetti();
+                }
+            } else {
+                btn.classList.add('shake', 'border-[#ef4444]', 'text-[#ef4444]');
+                setTimeout(() => btn.classList.remove('shake', 'border-[#ef4444]', 'text-[#ef4444]'), 400);
+            }
+        }
+
+        function returnPill(blankNum) {
+            const targetBlank = document.getElementById(`c-blank${blankNum}`);
+            const word = targetBlank.innerText;
+            if(!word) return;
+            
+            targetBlank.innerText = "";
+            targetBlank.classList.remove('filled');
+            
+            const pills = document.querySelectorAll('.constructor-pill');
+            pills.forEach(p => { if(p.innerText === word) p.classList.remove('used'); });
+            
+            activeBlank = blankNum;
+            document.getElementById('constructor-hub').classList.add('hidden');
+        }
+
+        // Drop the Beat
+        const tgtSentence = ["Just", "a", "touch", "of", "your", "love"];
+        let shfWords = [...tgtSentence].sort(() => Math.random() - 0.5);
+        function setupDropBeat() {
+            const b = document.getElementById('drop-word-bank'); b.innerHTML = '';
+            shfWords.forEach(w => {
+                const s = document.createElement('span');
+                s.className = 'word-pill bg-[#282828] px-6 py-3 rounded-full font-bold text-xl border border-gray-700';
+                s.innerText = w; s.onclick = () => moveToBox(s); b.appendChild(s);
+            });
+        }
+        function moveToBox(el) { el.onclick = () => moveToBank(el); document.getElementById('drop-answer-box').appendChild(el); }
+        function moveToBank(el) { el.onclick = () => moveToBox(el); document.getElementById('drop-word-bank').appendChild(el); }
+        function resetDropBeat() { document.getElementById('drop-answer-box').innerHTML=''; document.getElementById('drop-hub').classList.add('hidden'); setupDropBeat(); }
+        function checkDropBeat() {
+            const cur = Array.from(document.getElementById('drop-answer-box').children).map(e => e.innerText);
+            if(cur.join(' ') === tgtSentence.join(' ')) {
+                document.getElementById('drop-hub').classList.remove('hidden');
+                document.getElementById('drop-answer-box').classList.add('border-brand-pink');
+            } else {
+                const box = document.getElementById('drop-answer-box');
+                box.classList.add('border-[#ef4444]', 'shake');
+                setTimeout(() => box.classList.remove('border-[#ef4444]', 'shake'), 400);
+            }
+        }
+
+        // Catch the Bug
+        function fixBug() {
+            const w = document.getElementById('bug-word');
+            w.classList.replace('border-[#ef4444]', 'bg-white'); w.classList.replace('text-[#ef4444]', 'text-black');
+            w.classList.add('px-3', 'rounded-lg', 'no-underline');
+            document.getElementById('bug-input-container').classList.remove('hidden');
+            document.getElementById('bug-input').focus();
+        }
+        function checkBug() {
+            const v = document.getElementById('bug-input').value.toLowerCase().trim();
+            if(v === 'touch') {
+                document.getElementById('bug-input-container').classList.add('hidden');
+                const w = document.getElementById('bug-word');
+                w.innerText = 'TOUCH'; w.className = 'text-brand-pink font-black border-b-4 border-brand-pink pb-1';
+                document.getElementById('bug-hub').classList.remove('hidden');
+            } else {
+                const i = document.getElementById('bug-input');
+                i.classList.add('shake', 'border-[#ef4444]', 'text-[#ef4444]');
+                setTimeout(() => i.classList.remove('shake', 'border-[#ef4444]', 'text-[#ef4444]'), 400);
+            }
+        }
+
+        // Rapid Fire Bamboozle
+        function checkRapid(btn, questionNum, isCorrect) {
+            const currentCard = document.getElementById(`rapid-q${questionNum}`);
+            if(isCorrect) {
+                btn.classList.replace('bg-[#282828]', 'bg-brand-pink');
+                btn.classList.add('text-white');
+                setTimeout(() => {
+                    currentCard.classList.add('hidden-card');
+                    if(questionNum < 3) { document.getElementById(`rapid-q${questionNum + 1}`).classList.remove('hidden-card'); } 
+                    else { document.getElementById('rapid-hub').classList.remove('hidden'); shootConfetti(); }
+                }, 500);
+            } else {
+                btn.classList.replace('bg-[#282828]', 'bg-[#ef4444]');
+                currentCard.classList.add('shake', 'border', 'border-[#ef4444]');
+                setTimeout(() => {
+                    btn.classList.replace('bg-[#ef4444]', 'bg-[#282828]');
+                    currentCard.classList.remove('shake', 'border', 'border-[#ef4444]');
+                }, 800);
+            }
+        }
+
+        // Song Review
+        function rateSong(btn, stars) {
+            const allStars = document.querySelectorAll('.star-btn');
+            allStars.forEach((star, index) => {
+                if(index < stars) {
+                    star.classList.remove('opacity-50', 'grayscale');
+                    star.classList.add('opacity-100', 'drop-shadow-[0_0_15px_rgba(236,72,153,0.8)]');
+                } else {
+                    star.classList.add('opacity-50', 'grayscale');
+                    star.classList.remove('opacity-100', 'drop-shadow-[0_0_15px_rgba(236,72,153,0.8)]');
+                }
+            });
+            document.getElementById('star-count').innerText = stars;
+            document.getElementById('review-hub').classList.remove('hidden');
+        }
+
+        function shootConfetti() {
+            const cols = ['#ec4899', '#FFFFFF', '#fbcfe8'];
+            for(let i=0; i<150; i++) {
+                let c = document.createElement('div');
+                c.className = 'confetti rounded-sm'; c.style.left = Math.random()*100+'vw';
+                c.style.backgroundColor = cols[Math.floor(Math.random()*cols.length)];
+                c.style.animation = `fall ${Math.random()*4+2}s linear forwards`;
+                c.style.animationDelay = Math.random()*1+'s';
+                document.body.appendChild(c);
+                setTimeout(()=>c.remove(), 7000);
+            }
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
